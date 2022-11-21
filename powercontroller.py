@@ -64,9 +64,11 @@ from adafruit_mcp230xx.mcp23017 import MCP23017
 config = configparser.ConfigParser()
 config.read('powercontroller.conf')
 
-# constants
+# default constants
 I2CADDR = 0x24 # A2=1, A1=0, A0=0
 TESTCOUNT = 5
+TESTONTIME = 1
+TESTOFFTIME = 0.5
 
 # GPIO Pin Layout - PCB and Breadboard
 #
@@ -192,8 +194,10 @@ if relay == "all":
 
 elif relay == "valve1":
   if action == "on":
+    print("current value of valve1 = " + str(relayPins[VALVE1]))
     relayPins[VALVE1].value = True
   elif action == "off":
+    print("current value of valve1 = " + str(relayPins[VALVE1]))
     relayPins[VALVE1].value = False
   else:
     usageError(203)
