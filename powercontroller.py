@@ -4,8 +4,10 @@
 #
 # Copyright 2022 Allen Pomeroy
 #
-# version: 1.0
+# version: 1.1
 #
+# v1.1
+# - add read of pin value prior to set
 # v1.0
 # - initial release
 #
@@ -66,9 +68,9 @@ config.read('powercontroller.conf')
 
 # default constants
 I2CADDR = 0x24 # A2=1, A1=0, A0=0
-TESTCOUNT = 5
+TESTCOUNT = 3
 TESTONTIME = 1
-TESTOFFTIME = 0.5
+TESTOFFTIME = 0.1
 
 # GPIO Pin Layout - PCB and Breadboard
 #
@@ -194,99 +196,128 @@ if relay == "all":
 
 elif relay == "valve1":
   if action == "on":
-    print("current value of valve1 = " + str(relayPins[VALVE1]))
-    relayPins[VALVE1].value = True
+    if relayPins[VALVE1].value == True:
+      print("valve1 already on")
+    else:
+      print("turning valve1 on")
+      relayPins[VALVE1].value = True
+    #print("current value of valve1 = {0}".format(relayPins[VALVE1].value))
   elif action == "off":
-    print("current value of valve1 = " + str(relayPins[VALVE1]))
-    relayPins[VALVE1].value = False
+    if relayPins[VALVE1].value == False:
+      print("valve1 already off")
+    else:
+      print("turning valve1 off")
+      relayPins[VALVE1].value = False
   else:
     usageError(203)
 
 elif relay == "valve2":
   if action == "on":
-    relayPins[VALVE2].value = True
+    if relayPins[VALVE2].value == True:
+      print("valve2 already on")
+    else:
+      print("turning valve2 on")
+      relayPins[VALVE2].value = True
   elif action == "off":
-    relayPins[VALVE2].value = False
+    if relayPins[VALVE2].value == False:
+      print("valve2 already off")
+    else:
+      print("turning valve2 off")
+      relayPins[VALVE2].value = False
   else:
     usageError(204)
 
 elif relay == "valve3":
   if action == "on":
-    relayPins[VALVE3].value = True
+    if relayPins[VALVE3].value == True:
+      print("valve3 already on")
+    else:
+      print("turning valve3 on")
+      relayPins[VALVE3].value = True
   elif action == "off":
-    relayPins[VALVE3].value = False
+    if relayPins[VALVE3].value == False:
+      print("valve3 already off")
+    else:
+      print("turning valve3 off")
+      relayPins[VALVE3].value = False
   else:
     usageError(205)
 
 elif relay == "valve4":
   if action == "on":
-    relayPins[VALVE4].value = True
+    if relayPins[VALVE4].value == True:
+      print("valve4 already on")
+    else:
+      print("turning valve4 on")
+      relayPins[VALVE4].value = True
   elif action == "off":
-    relayPins[VALVE4].value = False
+    if relayPins[VALVE4].value == False:
+      print("valve4 already off")
+    else:
+      print("turning valve4 off")
+      relayPins[VALVE4].value = False
   else:
     usageError(206)
 
 elif relay == "valve5":
   if action == "on":
-    relayPins[VALVE5].value = True
+    if relayPins[VALVE5].value == True:
+      print("valve5 already on")
+    else:
+      print("turning valve5 on")
+      relayPins[VALVE5].value = True
   elif action == "off":
-    relayPins[VALVE5].value = False
+    if relayPins[VALVE5].value == False:
+      print("valve5 already off")
+    else:
+      print("turning valve5 off")
+      relayPins[VALVE5].value = False
   else:
     usageError(207)
 
 elif relay == "pump1":
   if action == "on":
-    relayPins[PUMP1].value = True
+    if relayPins[PUMP1].value == True:
+      print("pump1 already on")
+    else:
+      print("turning pump1 on")
+      relayPins[PUMP1].value = True
   elif action == "off":
-    relayPins[PUMP1].value = False
+    if relayPins[PUMP1].value == False:
+      print("pump1 already off")
+    else:
+      print("turning pump1 off")
+      relayPins[PUMP1].value = False
   else:
     usageError(208)
 
 elif relay == "pump2":
   if action == "on":
-    relayPins[PUMP2].value = True
+    if relayPins[PUMP2].value == True:
+      print("pump2 already on")
+    else:
+      print("turning pump2 on")
+      relayPins[PUMP2].value = True
   elif action == "off":
-    relayPins[PUMP2].value = False
+    if relayPins[PUMP2].value == False:
+      print("pump2 already off")
+    else:
+      print("turning pump2 off")
+      relayPins[PUMP2].value = False
   else:
     usageError(209)
 
 elif relay == "test":
   if action == "on":
     for i in range(TESTCOUNT):
-      print("pin0 on")
-      relayPins[0].value = True  # GPIO0 / GPIOA0 to high logic level
-      time.sleep(1)
-      print("pin0 off")
-      relayPins[0].value = False # GPIO0 / GPIOA0 to low logic level
-      time.sleep(0.5)
+      for p in range(7):
+        print("cycle " + str(i) + " pin" + str(p) + " on")
+        relayPins[p].value = True  # GPIO0 / GPIOA0 to high logic level
+        time.sleep(TESTONTIME)
+        print("cycle " + str(i) + " pin" + str(p) + " off")
+        relayPins[p].value = False # GPIO0 / GPIOA0 to low logic level
+        time.sleep(TESTOFFTIME)
     
-      print("pin1 on")
-      relayPins[1].value = True
-      time.sleep(1)
-      print("pin1 off")
-      relayPins[1].value = False
-      time.sleep(0.5)
-    
-      print("pin2 on")
-      relayPins[2].value = True
-      time.sleep(1)
-      print("pin2 off")
-      relayPins[2].value = False
-      time.sleep(0.5)
-    
-      print("pin3 on")
-      relayPins[3].value = True
-      time.sleep(1)
-      print("pin3 off")
-      relayPins[3].value = False
-      time.sleep(0.5)
-    
-      print("pin8 on")
-      relayPins[4].value = True
-      time.sleep(1)
-      print("pin8 off")
-      relayPins[4].value = False
-      time.sleep(0.5)
   else:
     usageError(210)
 
