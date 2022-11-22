@@ -10,6 +10,8 @@
 # - add read of pin value prior to set
 # v1.0
 # - initial release
+# - Uses Adafruit libraries
+#   https://docs.circuitpython.org/projects/mcp230xx/en/latest/api.html#adafruit_mcp230xx.digital_inout.DigitalInOut.value
 #
 # Control script for Allen Pomeroy PowerController hardware v2.3
 # MCP23017 based I2C bus expansion board
