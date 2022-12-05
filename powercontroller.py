@@ -1,17 +1,23 @@
 #!/usr/bin/python3
 #
-# powercontroller.py
+# powercontroller2.py
 #
 # Copyright 2022 Allen Pomeroy
 #
-# version: 1.1
-#
+# v1.2
+# - added command line argument processing
+# - added syslog output for auditing/monitoring
 # v1.1
 # - add read of pin value prior to set
 # v1.0
 # - initial release
 # - Uses Adafruit libraries
 #   https://docs.circuitpython.org/projects/mcp230xx/en/latest/api.html#adafruit_mcp230xx.digital_inout.DigitalInOut.value
+# - need to install the libraries prior to using this script
+#   sudo pip3 install adafruit-circuitpython-mcp230xx
+#
+# TODO:
+# - convert linear code to functions
 #
 # Control script for Allen Pomeroy PowerController hardware v2.3
 # MCP23017 based I2C bus expansion board
@@ -41,9 +47,10 @@
 #
 # GPIO_INTA acsense
 #
-# GPIO_B5 pin13 line0
-# GPIO_B6 pin14 line1
-# GPIO_B7 pin15 line2
+# example uses
+# GPIO_B5 pin13 line0 - water pressure sensor
+# GPIO_B6 pin14 line1 - water flow sensor
+# GPIO_B7 pin15 line2 - extra digital input
 #
 # Usage:
 # powercontroller.py {relay-name|all} {on|off}
@@ -54,25 +61,78 @@
 # sequentially TESTCOUNT times.
 #
 
+# -------
 # imports
 import board
 import busio
 import time
 import configparser
+import argparse
+import syslog
 from array import array
 import sys
 from digitalio import Direction
 from adafruit_mcp230xx.mcp23017 import MCP23017
 
-# config file for options
-config = configparser.ConfigParser()
-config.read('powercontroller.conf')
+# ---------
+# constants
 
-# default constants
-I2CADDR = 0x24 # A2=1, A1=0, A0=0
-TESTCOUNT = 3
-TESTONTIME = 1
-TESTOFFTIME = 0.1
+version = "1.2"
+
+# -------------
+# configuration via command line parameters
+#
+# default constants defined in command line argument processing
+# I2CADDR = 0x24 # A2=1, A1=0, A0=0
+# TESTCOUNT = 3
+# TESTONTIME = 1
+# TESTOFFTIME = 0.1
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-i", "--i2caddress", 
+                    help="I2C address of the PowerController board", action="store", type=str, default='0x24')
+parser.add_argument("-t", "--testcount", 
+                    help="Number of test cycles", type=int, action="store", default='3')
+parser.add_argument("-o", "--testontime", 
+                    help="On time for tests (sec)", type=float, action="store", default='1')
+parser.add_argument("-s", "--syslog", 
+                    help="Send syslog status messages", action="store_true")
+parser.add_argument("-f", "--testofftime", 
+                    help="Off time for tests (sec)", type=float, action="store", default='0.1')
+parser.add_argument("-v", "--verbose", 
+                    help="Print progress messages", action="store_true")
+parser.add_argument("-r", "--relay", type=str, action="store", required=True,
+                    choices=['valve1', 'valve2', 'valve3', 'valve4', 'valve5', 'pump1', 'pump2', 'test', 'all'],
+                    help="Name of relay to operate on")
+parser.add_argument("-a", "--action", type=str, action="store", required=True,
+                    choices=['on', 'off'],
+                    help="Action to perform on relay. Note relay 'all' can only accept action 'off'")
+
+# parse the arguments
+args         = parser.parse_args()
+verbose      = args.verbose
+testcount    = args.testcount
+testontime   = args.testontime
+testofftime  = args.testofftime
+sendsyslog   = args.syslog
+i2caddr      = int(args.i2caddress, 16)
+relay        = args.relay
+action       = args.action
+
+if verbose == True:
+  strHex = "0x%0.2X" % i2caddr
+  print("startup .. version " + str(version))
+  print("testcount " + str(testcount))
+  print("testontime " + str(testontime))
+  print("testofftime " + str(testofftime))
+  print("address " + strHex)
+  print("verbose " + str(verbose))
+  print("sendsyslog " + str(sendsyslog))
+  print("relay " + str(relay))
+  print("action " + str(action))
+
+if sendsyslog == True:
+  syslog.syslog("startup .. version " + str(version))
 
 # GPIO Pin Layout - PCB and Breadboard
 #
@@ -126,28 +186,37 @@ PUMP2  = 6
 
 # usage error
 def usageError(errno):
-  print("usage: powercontroller.py {relay-name|all} {on|off} error code " + str(errno))
+  print("usage: powercontroller2.py {relay-name|all} {on|off} error code " + str(errno))
   print("relay-name can be \"all\" for \"off\" action only")
   print("valve1  valve2  valve3  valve4  valve5  pump1  pump2  test")
   exit(1)
 
 # error exit
 def initError(errno):
-  print("powercontroller.py initialization error code " + str(errno))
+  print("powercontroller2.py initialization error code " + str(errno))
   exit(errno)
 
-# ----
+# -----
 # setup i2c handle and access
+
+if sendsyslog == True:
+  strHex = "0x%0.2X" % i2caddr
+  syslog.syslog("initializing I2C at " + strHex)
+  #syslog.syslog(syslog.LOG_INFO, "Test message at INFO priority")
 
 try:
   i2c = busio.I2C(board.SCL, board.SDA)
 except ValueError:
+  if sendsyslog == True:
+    syslog.syslog(syslog.LOG_WARNING, "initialization of I2C failed")
   initError(301)
 
 # create MCP access
 try:
-  mcp = MCP23017(i2c,address=I2CADDR)
+  mcp = MCP23017(i2c,address=i2caddr)
 except ValueError:
+  if sendsyslog == True:
+    syslog.syslog(syslog.LOG_WARNING, "initialization of MCP failed")
   initError(302)
 
 # build list of all used output pins
@@ -165,6 +234,11 @@ relayPins.append(mcp.get_pin(PUMP2PIN))
 # set all the valve and pump pins to output
 for pin in relayPins:
     pin.direction = Direction.OUTPUT
+    # do not initialize all output pins to off
+    # otherwise any relay that is currently on
+    # will be forced off - only allowing one relay to
+    # be on at a time.
+    #pin.value     = False
 
 # set all the port B line pins to input, with pullups
 #for pin in port_b_pins:
@@ -176,16 +250,18 @@ for pin in relayPins:
 
 
 # must be three arguments
-if len(sys.argv) != 3  or (sys.argv[2] != "on" and sys.argv[2] != "off"):
-  usageError(201)
+#if len(sys.argv) != 3  or (sys.argv[2] != "on" and sys.argv[2] != "off"):
+#  usageError(201)
 
 # capture relay and action from command line arguments
-relay  = sys.argv[1]
-action = sys.argv[2]
+#relay  = sys.argv[1]
+#action = sys.argv[2]
 
 # check arguments
 if relay == "all":
   if action == "off":
+    if sendsyslog == True:
+      syslog.syslog("executing all off")
     relayPins[VALVE1].value = False
     relayPins[VALVE2].value = False
     relayPins[VALVE3].value = False
@@ -199,16 +275,24 @@ if relay == "all":
 elif relay == "valve1":
   if action == "on":
     if relayPins[VALVE1].value == True:
-      print("valve1 already on")
+      if verbose == True:
+        print("valve1 already on")
     else:
-      print("turning valve1 on")
+      if verbose == True:
+        print("executing " + relay + " " + action)
+      if sendsyslog == True:
+        syslog.syslog("executing " + relay + " " + action)
       relayPins[VALVE1].value = True
     #print("current value of valve1 = {0}".format(relayPins[VALVE1].value))
   elif action == "off":
     if relayPins[VALVE1].value == False:
-      print("valve1 already off")
+      if verbose == True:
+        print("valve1 already off")
     else:
-      print("turning valve1 off")
+      if verbose == True:
+        print("executing " + relay + " " + action)
+      if sendsyslog == True:
+        syslog.syslog("executing " + relay + " " + action)
       relayPins[VALVE1].value = False
   else:
     usageError(203)
@@ -216,15 +300,23 @@ elif relay == "valve1":
 elif relay == "valve2":
   if action == "on":
     if relayPins[VALVE2].value == True:
-      print("valve2 already on")
+      if verbose == True:
+        print("valve2 already on")
     else:
-      print("turning valve2 on")
+      if verbose == True:
+        print("executing " + relay + " " + action)
+      if sendsyslog == True:
+        syslog.syslog("executing " + relay + " " + action)
       relayPins[VALVE2].value = True
   elif action == "off":
     if relayPins[VALVE2].value == False:
-      print("valve2 already off")
+      if verbose == True:
+        print("valve2 already off")
     else:
-      print("turning valve2 off")
+      if verbose == True:
+        print("executing " + relay + " " + action)
+      if sendsyslog == True:
+        syslog.syslog("executing " + relay + " " + action)
       relayPins[VALVE2].value = False
   else:
     usageError(204)
@@ -232,15 +324,23 @@ elif relay == "valve2":
 elif relay == "valve3":
   if action == "on":
     if relayPins[VALVE3].value == True:
-      print("valve3 already on")
+      if verbose == True:
+        print("valve3 already on")
     else:
-      print("turning valve3 on")
+      if verbose == True:
+        print("executing " + relay + " " + action)
+      if sendsyslog == True:
+        syslog.syslog("executing " + relay + " " + action)
       relayPins[VALVE3].value = True
   elif action == "off":
     if relayPins[VALVE3].value == False:
-      print("valve3 already off")
+      if verbose == True:
+        print("valve3 already off")
     else:
-      print("turning valve3 off")
+      if verbose == True:
+        print("executing " + relay + " " + action)
+      if sendsyslog == True:
+        syslog.syslog("executing " + relay + " " + action)
       relayPins[VALVE3].value = False
   else:
     usageError(205)
@@ -248,15 +348,23 @@ elif relay == "valve3":
 elif relay == "valve4":
   if action == "on":
     if relayPins[VALVE4].value == True:
-      print("valve4 already on")
+      if verbose == True:
+        print("valve4 already on")
     else:
-      print("turning valve4 on")
+      if verbose == True:
+        print("executing " + relay + " " + action)
+      if sendsyslog == True:
+        syslog.syslog("executing " + relay + " " + action)
       relayPins[VALVE4].value = True
   elif action == "off":
     if relayPins[VALVE4].value == False:
-      print("valve4 already off")
+      if verbose == True:
+        print("valve4 already off")
     else:
-      print("turning valve4 off")
+      if verbose == True:
+        print("executing " + relay + " " + action)
+      if sendsyslog == True:
+        syslog.syslog("executing " + relay + " " + action)
       relayPins[VALVE4].value = False
   else:
     usageError(206)
@@ -264,15 +372,23 @@ elif relay == "valve4":
 elif relay == "valve5":
   if action == "on":
     if relayPins[VALVE5].value == True:
-      print("valve5 already on")
+      if verbose == True:
+        print("valve5 already on")
     else:
-      print("turning valve5 on")
+      if verbose == True:
+        print("executing " + relay + " " + action)
+      if sendsyslog == True:
+        syslog.syslog("executing " + relay + " " + action)
       relayPins[VALVE5].value = True
   elif action == "off":
     if relayPins[VALVE5].value == False:
-      print("valve5 already off")
+      if verbose == True:
+        print("valve5 already off")
     else:
-      print("turning valve5 off")
+      if verbose == True:
+        print("executing " + relay + " " + action)
+      if sendsyslog == True:
+        syslog.syslog("executing " + relay + " " + action)
       relayPins[VALVE5].value = False
   else:
     usageError(207)
@@ -280,15 +396,23 @@ elif relay == "valve5":
 elif relay == "pump1":
   if action == "on":
     if relayPins[PUMP1].value == True:
-      print("pump1 already on")
+      if verbose == True:
+        print("pump1 already on")
     else:
-      print("turning pump1 on")
+      if verbose == True:
+        print("executing " + relay + " " + action)
+      if sendsyslog == True:
+        syslog.syslog("executing " + relay + " " + action)
       relayPins[PUMP1].value = True
   elif action == "off":
     if relayPins[PUMP1].value == False:
-      print("pump1 already off")
+      if verbose == True:
+        print("pump1 already off")
     else:
-      print("turning pump1 off")
+      if verbose == True:
+        print("executing " + relay + " " + action)
+      if sendsyslog == True:
+        syslog.syslog("executing " + relay + " " + action)
       relayPins[PUMP1].value = False
   else:
     usageError(208)
@@ -296,29 +420,47 @@ elif relay == "pump1":
 elif relay == "pump2":
   if action == "on":
     if relayPins[PUMP2].value == True:
-      print("pump2 already on")
+      if verbose == True:
+        print("pump2 already on")
     else:
-      print("turning pump2 on")
+      if verbose == True:
+        print("executing " + relay + " " + action)
+      if sendsyslog == True:
+        syslog.syslog("executing " + relay + " " + action)
       relayPins[PUMP2].value = True
   elif action == "off":
     if relayPins[PUMP2].value == False:
-      print("pump2 already off")
+      if verbose == True:
+        print("pump2 already off")
     else:
-      print("turning pump2 off")
+      if verbose == True:
+        print("executing " + relay + " " + action)
+      if sendsyslog == True:
+        syslog.syslog("executing " + relay + " " + action)
       relayPins[PUMP2].value = False
   else:
     usageError(209)
 
 elif relay == "test":
   if action == "on":
-    for i in range(TESTCOUNT):
+    if verbose == True:
+      print("executing " + relay + " " + action)
+    if sendsyslog == True:
+      syslog.syslog("executing " + relay + " " + action)
+    for i in range(testcount):
       for p in range(7):
-        print("cycle " + str(i) + " pin" + str(p) + " on")
+        if verbose == True:
+          print("cycle " + str(i) + " pin" + str(p) + " on")
+        if sendsyslog == True:
+          syslog.syslog("cycle " + str(i) + " pin" + str(p) + " on")
         relayPins[p].value = True  # GPIO0 / GPIOA0 to high logic level
-        time.sleep(TESTONTIME)
-        print("cycle " + str(i) + " pin" + str(p) + " off")
+        time.sleep(testontime)
+        if verbose == True:
+          print("cycle " + str(i) + " pin" + str(p) + " off")
+        if sendsyslog == True:
+          syslog.syslog("cycle " + str(i) + " pin" + str(p) + " off")
         relayPins[p].value = False # GPIO0 / GPIOA0 to low logic level
-        time.sleep(TESTOFFTIME)
+        time.sleep(testofftime)
     
   else:
     usageError(210)
