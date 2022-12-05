@@ -4,6 +4,8 @@
 #
 # Copyright 2022 Allen Pomeroy
 #
+# v1.3
+# - updated pinout mapping for v2.4 relays and pumps
 # v1.2
 # - added command line argument processing
 # - added syslog output for auditing/monitoring
@@ -19,7 +21,7 @@
 # TODO:
 # - convert linear code to functions
 #
-# Control script for Allen Pomeroy PowerController hardware v2.3
+# Control script for Allen Pomeroy PowerController hardware v2.4
 # MCP23017 based I2C bus expansion board
 # - 5x 24VAC valve relays
 # - 2x 12VDC pump relay feeds
