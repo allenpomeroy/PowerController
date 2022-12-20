@@ -22,6 +22,7 @@
 # - convert linear code to functions
 #
 # Control script for Allen Pomeroy PowerController hardware v2.4
+# See pomeroy.us/2022/12/building-an-irrigation-power-controller/
 # MCP23017 based I2C bus expansion board
 # - 5x 24VAC valve relays
 # - 2x 12VDC pump relay feeds
