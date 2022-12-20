@@ -2,10 +2,22 @@
 #
 # powercontroller2.py
 #
+# Control script for Allen Pomeroy PowerController hardware v2.4
+# See pomeroy.us/2022/12/building-an-irrigation-power-controller/
+# MCP23017 based I2C bus expansion board
+# - 5x 24VAC valve relays
+# - 2x 12VDC pump relay feeds
+# - 3x 5v GPIO digital lines
+# - AC Hz sensor
+# 
+# Turns pump or valve relays on or off.  No sample interrupt handling to measure frequency yet.
+#
 # Copyright 2022 Allen Pomeroy
 #
 # v1.3
 # - updated pinout mapping for v2.4 relays and pumps
+# - IMPORTANT cannot use earlier versions since GPIO pinouts completely changed in hardware v2.4
+# - pre-release code .. it's ugly and incomplete
 # v1.2
 # - added command line argument processing
 # - added syslog output for auditing/monitoring
@@ -20,16 +32,9 @@
 #
 # TODO:
 # - convert linear code to functions
+# - add optional pin configuration to accomodate prototyping
 #
-# Control script for Allen Pomeroy PowerController hardware v2.4
-# MCP23017 based I2C bus expansion board
-# - 5x 24VAC valve relays
-# - 2x 12VDC pump relay feeds
-# - 3x 5v GPIO digital lines
-# - AC Hz sensor
-# 
-# Turns pump or valve relays on or off
-#
+
 # PowerController i2c bus address jumpers
 #  A2 A1 A0
 #  0  0  0  0x20
@@ -39,23 +44,36 @@
 #  1  0  0  0x24
 #
 # Hardware I/O configuration
-# GPIO_B0 pin8  valve1
-# GPIO_B1 pin9  valve2
-# GPIO_B2 pin10 valve3
-# GPIO_B3 pin11 valve4
-# GPIO_B4 pin12 valve5
-# GPIO_A0 pin0  pump1
-# GPIO_A1 pin1  pump2
+#
+# GPIO Pin Layout - PCB and Breadboard - HW v2.4
+#
+# GPIO-ID  PIN  IC-PIN  HW      BREADBOARD
+# GPIOA0   0    21              RED
+# GPIOA1   1    22              YEL
+# GPIOA2   2    23              GREEN
+# GPIOA3   3    24      ACSENSE BLUE
+# GPIOA4   4    25      
+# GPIOA5   5    26      PUMP1
+# GPIOA6   6    27      VALVE2
+# GPIOA7   7    28      VALVE4
+# GPIOB0   8     1      VALVE5  RELAY
+# GPIOB1   9     2      VALVE3
+# GPIOB2   10    3      VALVE1
+# GPIOB3   11    4      PUMP2
+# GPIOB4   12    5      
+# GPIOB5   13    6      LINE0
+# GPIOB6   14    7      LINE1
+# GPIOB7   15    8      LINE2
 #
 # GPIO_INTA acsense
 #
 # example uses
-# GPIO_B5 pin13 line0 - water pressure sensor
-# GPIO_B6 pin14 line1 - water flow sensor
-# GPIO_B7 pin15 line2 - extra digital input
+# line0 - water pressure sensor
+# line1 - water flow sensor
+# line2 - extra digital input
 #
 # Usage:
-# powercontroller.py {relay-name|all} {on|off}
+# powercontroller2.py {relay-name|all} {on|off}
 # valve1, valve2, valve3, valve4, valve5, pump1, pump2, test
 # 
 # Optionally can specify "all" for relay name for "off" action.
@@ -79,7 +97,33 @@ from adafruit_mcp230xx.mcp23017 import MCP23017
 # ---------
 # constants
 
-version = "1.2"
+version = "1.3"
+
+# PCB
+VALVE1PIN = 10
+VALVE2PIN = 6
+VALVE3PIN = 9
+VALVE4PIN = 7
+VALVE5PIN = 8
+PUMP1PIN  = 5
+PUMP2PIN  = 11
+LINE0     = 13
+LINE1     = 14
+LINE2     = 15
+ACSENSE   = 3
+
+# array index
+VALVE1 = 0
+VALVE2 = 1
+VALVE3 = 2
+VALVE4 = 3
+VALVE5 = 4
+PUMP1  = 5
+PUMP2  = 6
+LINE0  = 7
+LINE1  = 8
+LINE2  = 9
+
 
 # -------------
 # configuration via command line parameters
@@ -135,53 +179,6 @@ if verbose == True:
 
 if sendsyslog == True:
   syslog.syslog("startup .. version " + str(version))
-
-# GPIO Pin Layout - PCB and Breadboard
-#
-# GPIO-ID  PIN  IC-PIN  HW     BREADBOARD
-# GPIOA0   0    21      PUMP1  RED
-# GPIOA1   1    22      PUMP2  YEL
-# GPIOA2   2    23             GREEN
-# GPIOA3   3    24             BLUE
-# GPIOA4   4    25      
-# GPIOA5   5    26      
-# GPIOA6   6    27      
-# GPIOA7   7    28      
-# GPIOB0   8     1      VALVE1  RELAY
-# GPIOB1   9     2      VALVE2
-# GPIOB2   10    3      VALVE3
-# GPIOB3   11    4      VALVE4
-# GPIOB4   12    5      VALVE5
-# GPIOB5   13    6      LINE0
-# GPIOB6   14    7      LINE1
-# GPIOB7   15    8      LINE2
-
-# PCB
-#VALVE1PIN = 8  # GPIO_B0 valve1
-#VALVE2PIN = 9  # GPIO_B1 valve2
-#VALVE3PIN = 10 # GPIO_B2 valve3
-#VALVE4PIN = 11 # GPIO_B3 valve4
-#VALVE5PIN = 12 # GPIO_B4 valve5
-#PUMP1PIN  = 0  # GPIO_A0 pump1
-#PUMP2PIN  = 1  # GPIO_A1 pump2
-
-# Breadboard
-VALVE1PIN = 8
-VALVE2PIN = 0
-VALVE3PIN = 1
-VALVE4PIN = 2
-VALVE5PIN = 3
-PUMP1PIN  = 8
-PUMP2PIN  = 2
-
-# array index
-VALVE1 = 0
-VALVE2 = 1
-VALVE3 = 2
-VALVE4 = 3
-VALVE5 = 4
-PUMP1  = 5
-PUMP2  = 6
 
 # --------------
 # error handlers
