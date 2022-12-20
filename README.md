@@ -1,2 +1,2 @@
 # PowerController
-Power controller for Garden irrigation
+Power controller for Garden irrigation project. See 
