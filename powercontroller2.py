@@ -42,6 +42,9 @@
 #  0  1  0  0x22
 #  0  1  1  0x23
 #  1  0  0  0x24
+#  1  0  1  0x25 
+#  1  1  0  0x26
+#  1  1  1  0x27
 #
 # Hardware I/O configuration
 #
@@ -136,7 +139,7 @@ LINE2  = 9
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--i2caddress", 
-                    help="I2C address of the PowerController board", action="store", type=str, default='0x20')
+                    help="I2C address of the PowerController board", action="store", type=str, default='0x27')
 parser.add_argument("-t", "--testcount", 
                     help="Number of test cycles", type=int, action="store", default='3')
 parser.add_argument("-o", "--testontime", 
