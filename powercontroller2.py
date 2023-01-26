@@ -136,7 +136,7 @@ LINE2  = 9
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--i2caddress", 
-                    help="I2C address of the PowerController board", action="store", type=str, default='0x24')
+                    help="I2C address of the PowerController board", action="store", type=str, default='0x20')
 parser.add_argument("-t", "--testcount", 
                     help="Number of test cycles", type=int, action="store", default='3')
 parser.add_argument("-o", "--testontime", 
