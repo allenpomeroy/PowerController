@@ -10,14 +10,22 @@
 # - 3x 5v GPIO digital lines
 # - AC Hz sensor
 # 
-# Turns pump or valve relays on or off.  No sample interrupt handling to measure frequency yet.
+# Turns pump and valve relays on or off.  No sample interrupt handling to measure frequency yet.
 #
-# Copyright 2022 Allen Pomeroy
+
+# WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING 
+# It is recommended to only activate a maximum of two (2) valves and
+# either or both pumps simultaneously to limit the aggregate current draw.
+# Activating more valves simulaneously is likely to cause excessive heat
+# generation and possible permanent damage to the circuit board or
+# components.
+
+# Copyright 2023 Allen Pomeroy - MIT license
 #
 # v1.3
-# - updated pinout mapping for v2.4 relays and pumps
+# - updated pinout mapping for hardware v2.4 relays and pumps
 # - IMPORTANT cannot use earlier versions since GPIO pinouts completely changed in hardware v2.4
-# - pre-release code .. it's ugly and incomplete
+# - pre-release code .. it's ugly and incomplete with little to no error checking
 # v1.2
 # - added command line argument processing
 # - added syslog output for auditing/monitoring
@@ -44,33 +52,33 @@
 #  1  0  0  0x24
 #  1  0  1  0x25 
 #  1  1  0  0x26
-#  1  1  1  0x27
+#  1  1  1  0x27 (default)
 #
 # Hardware I/O configuration
 #
 # GPIO Pin Layout - PCB and Breadboard - HW v2.4
 #
 # GPIO-ID  PIN  IC-PIN  HW      BREADBOARD
-# GPIOA0   0    21              RED
-# GPIOA1   1    22              YEL
-# GPIOA2   2    23              GREEN
+# GPIOA0   0    21      -       RED
+# GPIOA1   1    22      -       YEL
+# GPIOA2   2    23      -       GREEN
 # GPIOA3   3    24      ACSENSE BLUE
-# GPIOA4   4    25      
-# GPIOA5   5    26      PUMP1
-# GPIOA6   6    27      VALVE2
-# GPIOA7   7    28      VALVE4
+# GPIOA4   4    25      -       -
+# GPIOA5   5    26      PUMP1   -
+# GPIOA6   6    27      VALVE2  -
+# GPIOA7   7    28      VALVE4  -
 # GPIOB0   8     1      VALVE5  RELAY
-# GPIOB1   9     2      VALVE3
-# GPIOB2   10    3      VALVE1
-# GPIOB3   11    4      PUMP2
-# GPIOB4   12    5      
-# GPIOB5   13    6      LINE0
-# GPIOB6   14    7      LINE1
-# GPIOB7   15    8      LINE2
+# GPIOB1   9     2      VALVE3  -
+# GPIOB2   10    3      VALVE1  -
+# GPIOB3   11    4      PUMP2   -
+# GPIOB4   12    5      -       -
+# GPIOB5   13    6      LINE0   -
+# GPIOB6   14    7      LINE1   - 
+# GPIOB7   15    8      LINE2   -
 #
 # GPIO_INTA acsense
 #
-# example uses
+# example uses for external inputs
 # line0 - water pressure sensor
 # line1 - water flow sensor
 # line2 - extra digital input
@@ -83,6 +91,12 @@
 # Can specify "test" "on" to run a loop through each relay activated
 # sequentially TESTCOUNT times.
 #
+# WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING 
+# It is recommended to only activate a maximum of two (2) valves and
+# either or both pumps simultaneously to limit the aggregate current draw.
+# Activating more valves simulaneously is likely to cause excessive heat
+# generation and possible permanent damage to the circuit board or
+# components.
 
 # -------
 # imports
