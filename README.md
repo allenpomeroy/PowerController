@@ -10,6 +10,6 @@ Provides:
 - five (5) 24VAC feeds for common irrigation control valves similar to RainBird model
 - two (2)  12VDC feeds to drive external 120VAC relays which control pumps
 
-WARNING WARNING WARNING WARNING WARNING WARNING 
+WARNING WARNING WARNING WARNING WARNING WARNING
 It is recommended to only activate a maximum of two (2) valves and either or both pumps simultaneously to limit the aggregate current draw.
 Activating more valves simulaneously is likely to cause excessive heat generation and possible permanent damage to the circuit board or components.
