@@ -12,13 +12,26 @@
 # 
 # Turns pump and valve relays on or off.  No sample interrupt handling to measure frequency yet.
 #
+# Usage:
+# powercontroller2.py -r {relay-name|all} -a {on|off}
+# valve1, valve2, valve3, valve4, valve5, pump1, pump2, test
+#
+# Examples:
+# ./powercontroller2.py -r test -a on
+# 
+# Optionally can specify "all" for relay name for "off" action.
+# Can specify "test" "on" to run a loop through each relay activated
+# sequentially TESTCOUNT times.
+#
 
+# 
 # WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING 
 # It is recommended to only activate a maximum of two (2) valves and
 # either or both pumps simultaneously to limit the aggregate current draw.
 # Activating more valves simulaneously is likely to cause excessive heat
 # generation and possible permanent damage to the circuit board or
 # components.
+#
 
 # Copyright 2023 Allen Pomeroy - MIT license
 #
@@ -83,23 +96,6 @@
 # line1 - water flow sensor
 # line2 - extra digital input
 #
-# Usage:
-# powercontroller2.py {relay-name|all} {on|off}
-# valve1, valve2, valve3, valve4, valve5, pump1, pump2, test
-#
-# Examples:
-# ./powercontroller2.py -r test -a on
-# 
-# Optionally can specify "all" for relay name for "off" action.
-# Can specify "test" "on" to run a loop through each relay activated
-# sequentially TESTCOUNT times.
-#
-# WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING 
-# It is recommended to only activate a maximum of two (2) valves and
-# either or both pumps simultaneously to limit the aggregate current draw.
-# Activating more valves simulaneously is likely to cause excessive heat
-# generation and possible permanent damage to the circuit board or
-# components.
 
 # -------
 # imports
@@ -206,8 +202,8 @@ if sendsyslog == True:
 # usage error
 def usageError(errno):
   print("usage: powercontroller2.py -r {relay-name|all} -a {on|off} error code " + str(errno))
-  print("relay-name can be \"all\" for \"off\" action only")
-  print("valve1  valve2  valve3  valve4  valve5  pump1  pump2  test")
+  print("       relay-name can be \"all\" for \"off\" action only")
+  print("       valve1  valve2  valve3  valve4  valve5  pump1  pump2  test")
   print("example: powercontroller2.py -r test -a on")
   exit(1)
 
