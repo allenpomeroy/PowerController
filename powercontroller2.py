@@ -2,6 +2,9 @@
 #
 # powercontroller2.py
 #
+# v2.4.5 2024/05/29
+# - added 'concise' output option for status checks
+#   will only return On or Off for relay in question
 # v2.4.4 2024/05/26
 # - updated debug logging
 # v2.4.3 2024/05/25
@@ -44,6 +47,7 @@
 # -a action
 # -s syslog
 # -d debug level
+# -c concise
 #
 # valve1, valve2, valve3, valve4, valve5, pump1, pump2, test
 #
@@ -168,6 +172,7 @@ parser.add_argument("-i", "--i2caddress", help="I2C address of the PowerControll
 parser.add_argument("-t", "--testcount", help="Number of test cycles", type=int, default='1')
 parser.add_argument("-o", "--testontime", help="On time for tests (sec)", type=float, default='10')
 parser.add_argument("-s", "--syslog", help="Send syslog status messages", action="store_true")
+parser.add_argument("-c", "--concise", help="Only output concise status messages", action="store_true")
 parser.add_argument("-f", "--testofftime", help="Off time for tests (sec)", type=float, default='10')
 parser.add_argument("-d", "--debug", help="Set debug level 0=none 5=max", type=int, default=0)
 parser.add_argument("-r", "--relay", type=str, required=True, choices=list(PIN_MAP.keys()) + ['test', 'all'], help="Name of relay to operate on")
@@ -182,6 +187,7 @@ sendsyslog = args.syslog
 i2caddr = int(args.i2caddress, 16)
 relay = args.relay
 action = args.action
+concise = args.concise
 
 
 # translate state
@@ -254,7 +260,10 @@ def perform_action_on_relay(relay, action, relay_pins):
             status = relay_pins[relay_index].value
         elif action == 'status':
             status = relay_pins[relay_index].value
-        log_message("relay " + str(relay) + " state " + translate_state(status), 0)
+        if concise:
+            log_message(translate_state(status), 0)
+        else:
+            log_message("relay " + str(relay) + " state " + translate_state(status), 0)
     except Exception as e:
         log_message(f"Failed to perform action {action} on relay {relay}: {str(e)}", 0)
         handle_error(f"Relay action error on {relay}", 400 + relay_index)
