@@ -36,3 +36,10 @@ Split the PowerController 2.4.2 hardware control script into two parts - daemon 
     irrigation-controller.py -r valve1 -a status
     irrigation-controller.py -r all -a status
 
+**Output**
+
+    {'relay': 'valve1', 'status': 'on'}
+    {'relay': 'valve1', 'status': 'off'}
+    {'relay': 'valve1', 'status': 'off'}
+    {'valve1': 'off', 'nearbed': 'off', 'mag': 'off', 'plants': 'off', 'valve5': 'off', 'pump1': 'off', 'pump2': 'off'}
+
