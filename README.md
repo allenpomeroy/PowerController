@@ -19,7 +19,7 @@ Activating more valves simulaneously is likely to cause excessive heat generatio
 Split the PowerController 2.4.2 hardware control script into two parts - daemon which listens on a socket and client which issues commands to the socket, returning the result.
 
 Installation
- sudo cp mcp-daemon.py /usr/local/bin
+```sudo cp mcp-daemon.py /usr/local/bin```
  sudo chown root: /usr/local/bin/mcp-daemon.py
  sudo chmod 750   /usr/local/bin/mcp-daemon.py
 
