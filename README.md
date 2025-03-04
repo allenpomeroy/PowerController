@@ -14,7 +14,9 @@ WARNING
 It is recommended to only activate a maximum of two (2) valves and either or both pumps simultaneously to limit the aggregate current draw.
 Activating more valves simulaneously is likely to cause excessive heat generation and possible permanent damage to the circuit board or components.
 
-Updated!  Split the PowerController 2.4.2 hardware control script into two parts - daemon which listens on a socket and client which issues commands to the socket, returning the result.
+**Updated!**
+
+Split the PowerController 2.4.2 hardware control script into two parts - daemon which listens on a socket and client which issues commands to the socket, returning the result.
 
 Installation
  sudo cp mcp-daemon.py /usr/local/bin
