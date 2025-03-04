@@ -18,19 +18,19 @@ Activating more valves simulaneously is likely to cause excessive heat generatio
 
 Split the PowerController 2.4.2 hardware control script into two parts - daemon which listens on a socket and client which issues commands to the socket, returning the result.
 
-Installation
+**Installation**
 ```sudo cp mcp-daemon.py /usr/local/bin```
- sudo chown root: /usr/local/bin/mcp-daemon.py
- sudo chmod 750   /usr/local/bin/mcp-daemon.py
+```sudo chown root: /usr/local/bin/mcp-daemon.py```
+```sudo chmod 750   /usr/local/bin/mcp-daemon.py```
 
- sudo cp mcp-daemon.service /etc/systemd/system
- sudo chown root: /etc/systemd/system/mcp-daemon.service
- sudo chmod 644   /etc/systemd/system/mcp-daemon.service
- sudo systemctl daemon-reload
- sudo systemctl enable mcp-daemon --now
+sudo cp mcp-daemon.service /etc/systemd/system
+sudo chown root: /etc/systemd/system/mcp-daemon.service
+sudo chmod 644   /etc/systemd/system/mcp-daemon.service
+sudo systemctl daemon-reload
+sudo systemctl enable mcp-daemon --now
 
-Usage
- irrigation-controller.py -r valve1 -a on
+**Usage**
+``` irrigation-controller.py -r valve1 -a on```
  irrigation-controller.py -r valve1 -a off
  irrigation-controller.py -r valve1 -a status
  irrigation-controller.py -r all -a status
